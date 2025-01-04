@@ -1,15 +1,33 @@
-import {FileStateFile} from '@/store/files/types'
-import {PrinterStateMacroParams} from '@/store/printer/types'
+import { FileStateFile } from '@/store/files/types'
+import { PrinterStateMacroParams } from '@/store/printer/types'
+import Vue from 'vue'
+
+export const setDataDeep = (currentState: any, payload: any) => {
+    if (payload !== null && typeof payload === 'object') {
+        Object.keys(payload).forEach((key: string) => {
+            const value = payload[key]
+
+            if (
+                typeof value === 'object' &&
+                !Array.isArray(value) &&
+                key in currentState &&
+                value !== null &&
+                currentState[key] !== null
+            ) {
+                setDataDeep(currentState[key], value)
+            } else Vue.set(currentState, key, value)
+        })
+    }
+}
 
 export const findDirectory = (folder: FileStateFile[], dirArray: string[]): FileStateFile[] | null => {
     if (folder !== undefined && folder !== null && dirArray.length) {
-
-        const parent = folder?.find((element: FileStateFile) => (element.isDirectory && element.filename === dirArray[0]))
+        const parent = folder?.find((element: FileStateFile) => element.isDirectory && element.filename === dirArray[0])
         if (parent) {
             dirArray.shift()
 
             if (parent.childrens && dirArray.length) return findDirectory(parent.childrens, dirArray)
-            else if(parent.childrens) return parent.childrens
+            else if (parent.childrens) return parent.childrens
         }
 
         return folder
@@ -34,46 +52,40 @@ export const capitalize = (str: string): string => {
     return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
-export const convertPanelnameToIcon = (name: string): string => {
-    if (name.startsWith('macrogroup_')) return 'mdi-code-tags'
-
-    switch (name) {
-    case 'webcam': return 'mdi-webcam'
-    case 'zoffset': return 'mdi-arrow-collapse-vertical'
-    case 'control': return 'mdi-gamepad'
-    case 'macros': return 'mdi-code-tags'
-    case 'printsettings': return 'mdi-printer-3d'
-    case 'miscellaneous': return 'mdi-dip-switch'
-    case 'tools': return 'mdi-thermometer-lines'
-    case 'miniconsole': return 'mdi-console-line'
-    case 'machine-settings': return 'mdi-engine'
-
-    default: return 'mdi-information'
-    }
-}
-
 export const camelize = (str: string): string => {
-    return str.replace(/_/g, ' ').replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
-        return index === 0 ? word.toLowerCase() : word.toUpperCase()
-    }).replace(/\s+/g, '')
+    return str
+        .replace(/_/g, ' ')
+        .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
+            return index === 0 ? word.toLowerCase() : word.toUpperCase()
+        })
+        .replace(/\s+/g, '')
 }
 
 export function formatConsoleMessage(message: string): string {
-    message = message.replace(/!! /g, '')
-    message = message.replace(/\/\/ /g, '')
+    // remove !! at error msg start
+    message = message.replace(/^!! /g, '')
+    // remove !! after \n new line
+    message = message.replace(/\n!! /g, '\n')
+    // remove // at command msg start
+    message = message.replace(/^\/\/ /g, '')
+    // remove // at \n new line
+    message = message.replace(/\n\/\/ /g, '\n')
+    // remove echo
+    message = message.replace(/^echo:/g, '')
+    // remove debug
+    message = message.replace(/^debug:/g, '')
+    // replace linebreaks with html <br>
     message = message.replace('\n// ', '<br>')
     message = message.replace(/\r\n|\r|\n/g, '<br>')
-    //message = message.replaceAll('<br />', '<br>')
-    //return message.split('<br>');
 
-    return message
+    return message.trim()
 }
 
 export const convertName = (name: string): string => {
     let output = ''
     name = name.replace(/_/g, ' ')
-    name.split(' ').forEach(split => {
-        output += ' '+split.charAt(0).toUpperCase() + split.slice(1)
+    name.split(' ').forEach((split) => {
+        output += ' ' + split.charAt(0).toUpperCase() + split.slice(1)
     })
     output = output.slice(1)
 
@@ -91,12 +103,6 @@ export const formatFilesize = (fileSizeInBytes: number): string => {
     return Math.max(fileSizeInBytes, 0.1).toFixed(1) + byteUnits[i]
 }
 
-export const formatDate = (date: number): string => {
-    const tmp2 = new Date(date)
-
-    return tmp2.toLocaleString().replace(',', '')
-}
-
 export const formatFrequency = (frequency: number): string => {
     let i = -1
     const units = [' kHz', ' MHz', ' GHz']
@@ -108,30 +114,30 @@ export const formatFrequency = (frequency: number): string => {
     return Math.max(frequency, 0.1).toFixed() + units[i]
 }
 
-export const formatPrintTime = (totalSeconds: number): string => {
-    if (totalSeconds) {
-        let output = ''
+export const formatPrintTime = (totalSeconds: number, boolDays = true): string => {
+    if (!totalSeconds) return '--'
 
+    const output: string[] = []
+
+    if (boolDays) {
         const days = Math.floor(totalSeconds / (3600 * 24))
         if (days) {
-            totalSeconds %= (3600 * 24)
-            output += days+'d'
+            totalSeconds %= 3600 * 24
+            output.push(`${days}d`)
         }
-
-        const hours = Math.floor(totalSeconds / 3600)
-        totalSeconds %= 3600
-        if (hours) output += ' '+hours+'h'
-
-        const minutes = Math.floor(totalSeconds / 60)
-        if (minutes) output += ' '+minutes+'m'
-
-        const seconds = totalSeconds % 60
-        if (seconds) output += ' '+seconds.toFixed(0)+'s'
-
-        return output
     }
 
-    return '--'
+    const hours = Math.floor(totalSeconds / 3600)
+    totalSeconds %= 3600
+    if (hours) output.push(`${hours}h`)
+
+    const minutes = Math.floor(totalSeconds / 60)
+    if (minutes) output.push(`${minutes}m`)
+
+    const seconds = totalSeconds % 60
+    if (seconds) output.push(`${seconds.toFixed(0)}s`)
+
+    return output.join(' ')
 }
 
 export const sortFiles = (items: FileStateFile[] | null, sortBy: string[], sortDesc: boolean[]): FileStateFile[] => {
@@ -140,7 +146,7 @@ export const sortFiles = (items: FileStateFile[] | null, sortBy: string[], sortD
 
     if (items !== null) {
         // Sort by index
-        items.sort(function(a: any, b: any) {
+        items.sort(function (a: any, b: any) {
             if (a[sortBySingle] === b[sortBySingle]) return 0
             if (a[sortBySingle] === null || a[sortBySingle] === undefined) return -1
             if (b[sortBySingle] === null || b[sortBySingle] === undefined) return 1
@@ -162,12 +168,11 @@ export const sortFiles = (items: FileStateFile[] | null, sortBy: string[], sortD
         if (sortDescSingle) items.reverse()
 
         // Then make sure directories come first
-        items.sort((a: any, b: any) => (a.isDirectory === b.isDirectory) ? 0 : (a.isDirectory ? -1 : 1))
+        items.sort((a: any, b: any) => (a.isDirectory === b.isDirectory ? 0 : a.isDirectory ? -1 : 1))
     }
 
     return items ?? []
 }
-
 
 export function strLongestEqual(a: string, b: string): string {
     const l = Math.min(a?.length ?? Number.MAX_VALUE, b?.length ?? Number.MAX_VALUE)
@@ -179,37 +184,41 @@ export function strLongestEqual(a: string, b: string): string {
 }
 
 export function reverseString(str: string): string {
-    return (str === '') ? '' : reverseString(str.substr(1)) + str.charAt(0)
+    return str === '' ? '' : reverseString(str.substr(1)) + str.charAt(0)
 }
 
 export function formatTime(date: Date): string {
     let hours: string | number = date.getHours()
-    if (hours < 10) hours = '0'+hours.toString()
+    if (hours < 10) hours = '0' + hours.toString()
     let minutes: string | number = date.getMinutes()
-    if (minutes < 10) minutes = '0'+minutes.toString()
+    if (minutes < 10) minutes = '0' + minutes.toString()
     let seconds: string | number = date.getSeconds()
-    if (seconds < 10) seconds = '0'+seconds.toString()
+    if (seconds < 10) seconds = '0' + seconds.toString()
 
-
-    return hours+':'+minutes+':'+seconds
+    return hours + ':' + minutes + ':' + seconds
 }
 
 export function getMacroParams(macro: { gcode: string }): PrinterStateMacroParams {
-    const paramRegex = /{%?.*?params\.([A-Za-z_0-9]+)(?:\|(int|string|double))?(?:\|default\('?"?(.*?)"?'?\))?(?:\|(int|string))?.*?%?}/
+    const paramRegex =
+        /{%?.*?params\.([A-Za-z_0-9]+)(?:\|(int|string|double))?(?:\|default\('?"?(.*?)"?'?\))?(?:\|(int|string))?.*?%?}/
 
     let params = paramRegex.exec(macro.gcode)
     let currentMatch = macro.gcode
     let ret: PrinterStateMacroParams = null
-    while(params) {
+    while (params) {
         if (ret === null) {
             ret = {}
         }
         const name = params[1]
-        const t: 'int' | 'string' | 'double' | null = (params[2] ?? params[4] ?? null) as 'int' | 'string' | 'double' | null
+        const t: 'int' | 'string' | 'double' | null = (params[2] ?? params[4] ?? null) as
+            | 'int'
+            | 'string'
+            | 'double'
+            | null
         const def = params[3] ?? null
         ret[`${name}`] = {
             type: t,
-            default: def
+            default: def,
         }
         currentMatch = currentMatch.replace(params[0], '')
         params = paramRegex.exec(currentMatch)
@@ -219,7 +228,7 @@ export function getMacroParams(macro: { gcode: string }): PrinterStateMacroParam
     params = paramInRegex.exec(macro.gcode)
     currentMatch = macro.gcode
 
-    while(params) {
+    while (params) {
         if (ret === null) {
             ret = {}
         }
@@ -227,7 +236,7 @@ export function getMacroParams(macro: { gcode: string }): PrinterStateMacroParam
         if (!(`${name}` in ret)) {
             ret[`${name}`] = {
                 type: null,
-                default: null
+                default: null,
             }
         }
         currentMatch = currentMatch.replace(params[0], '')
@@ -235,4 +244,50 @@ export function getMacroParams(macro: { gcode: string }): PrinterStateMacroParam
     }
 
     return ret
+}
+
+export function windowBeforeUnloadFunction(e: BeforeUnloadEvent) {
+    e.preventDefault()
+    e.returnValue = ''
+}
+
+export function copyToClipboard(text: string) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text)
+        return
+    }
+
+    const textArea = document.createElement('textarea')
+    let element = document.getElementById('devices-dialog')
+    if (!element) element = document.body
+
+    textArea.value = text
+    textArea.style.position = 'absolute'
+    textArea.style.top = '0'
+    textArea.style.left = '0'
+    textArea.style.zIndex = '100000'
+    textArea.style.opacity = '0'
+    element.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    try {
+        document.execCommand('copy')
+    } catch (err) {
+        console.error('Unable to copy to clipboard', err)
+    }
+    textArea.remove()
+}
+
+export function sortResolutions(a: string, b: string) {
+    const aSplit = parseInt(a.split('x')[0])
+    const bSplit = parseInt(b.split('x')[0])
+
+    return aSplit - bSplit
+}
+
+export function escapePath(path: string): string {
+    return path
+        .split('/')
+        .map((part) => encodeURIComponent(part))
+        .join('/')
 }

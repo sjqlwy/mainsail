@@ -1,54 +1,51 @@
-<style scoped lang="scss">
-    .consoleTableRow {
-        font-family: 'Roboto Mono', monospace;
-        font-size: .95em;
-
-        &.default {
-            .col {
-                padding-top: 8px !important;
-                padding-bottom: 8px !important;
-            }
-
-            &+.consoleTableRow .col {
-                border-top: 1px solid rgba(255, 255, 255, 0.12);
-            }
-        }
-
-        &.compact {
-            .col {
-                padding-top: 2px !important;
-                padding-bottom: 2px !important;
-            }
-        }
-    }
-</style>
-
 <template>
-    <v-row :class="'ma-0 '+entryStyle">
-        <v-col class="col-auto pr-0 text--disabled console-time">{{ event.formatTime }}</v-col>
-        <v-col  :class="colorConsoleMessage(event) + ' ' + 'console-message'" v-html="event.formatMessage" @click.capture="commandClick"></v-col>
+    <v-row :class="entryStyle">
+        <v-col class="col-auto pr-0 text--disabled console-time">{{ entryFormatTime }}</v-col>
+        <v-col
+            v-if="!rawOutput"
+            :class="messageClass"
+            style="min-width: 0"
+            @click.capture="commandClick"
+            v-html="event.formatMessage" />
+        <v-col v-else :class="messageClass" style="min-width: 0" @click.capture="commandClick" v-text="event.message" />
     </v-row>
 </template>
 
 <script lang="ts">
 import Component from 'vue-class-component'
-import Vue from 'vue'
-import {Prop} from 'vue-property-decorator'
-import {ServerStateEvent} from '@/store/server/types'
+import { Mixins, Prop } from 'vue-property-decorator'
+import { ServerStateEvent } from '@/store/server/types'
+import BaseMixin from '@/components/mixins/base'
 
 @Component
-export default class ConsoleTableEntry extends Vue {
+export default class ConsoleTableEntry extends Mixins(BaseMixin) {
     @Prop({ required: true })
-    readonly event!: ServerStateEvent
+    declare readonly event: ServerStateEvent
 
     get entryStyle() {
-        return this.$store.state.gui.console.entryStyle ?? 'default'
+        const classes = ['ma-0', 'flex-nowrap']
+        classes.push(this.$store.state.gui.console.entryStyle ?? 'default')
+        if (['action', 'debug'].includes(this.event.type)) classes.push('text--disabled')
+
+        return classes
     }
 
-    colorConsoleMessage(item: ServerStateEvent): string {
-        if (item.message.startsWith('!! ')) return 'error--text'
+    get entryFormatTime() {
+        return this.formatTime(this.event.date.getTime(), true)
+    }
 
-        return 'text--primary'
+    get messageClass() {
+        const classes = ['console-message']
+
+        if (['action', 'debug'].includes(this.event.type)) classes.push('text--disabled')
+        else if (this.event.message.startsWith('!! ')) classes.push('error--text')
+        else classes.push('text--primary')
+
+        return classes
+    }
+
+    get rawOutput() {
+        return this.$store.state.gui.console.rawOutput ?? false
     }
 
     commandClick(event: Event) {
@@ -61,3 +58,33 @@ export default class ConsoleTableEntry extends Vue {
     }
 }
 </script>
+
+<style scoped>
+.consoleTableRow {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.95em;
+    white-space: pre-wrap;
+
+    &.default {
+        .col {
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+        }
+
+        & + .consoleTableRow .col {
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+    }
+
+    &.compact {
+        .col {
+            padding-top: 2px !important;
+            padding-bottom: 2px !important;
+        }
+    }
+}
+
+html.theme--light .consoleTableRow.default + .consoleTableRow .col {
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+</style>

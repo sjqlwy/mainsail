@@ -2,7 +2,7 @@ import { Module } from 'vuex'
 import { actions } from '@/store/gui/console/actions'
 import { mutations } from '@/store/gui/console/mutations'
 import { getters } from '@/store/gui/console/getters'
-import {GuiConsoleState} from '@/store/gui/console/types'
+import { GuiConsoleState } from '@/store/gui/console/types'
 
 export const getDefaultState = (): GuiConsoleState => {
     return {
@@ -11,7 +11,9 @@ export const getDefaultState = (): GuiConsoleState => {
         direction: 'table',
         entryStyle: 'default',
         height: 300,
+        autoscroll: true,
         consolefilters: {},
+        rawOutput: false,
     }
 }
 
@@ -24,5 +26,5 @@ export const console: Module<GuiConsoleState, any> = {
     state,
     getters,
     actions,
-    mutations
+    mutations,
 }

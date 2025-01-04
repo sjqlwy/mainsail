@@ -1,11 +1,14 @@
 export interface SocketState {
-    remoteMode: boolean
     hostname: string
     port: number
+    path: string
     protocol: string
     reconnectInterval: number
-    isConnected: boolean,
-    isConnecting: boolean,
-    connectingFailed: boolean,
+    isConnected: boolean
+    isConnecting: boolean
+    connectingFailed: boolean
+    connectionFailedMessage: string | null
     loadings: string[]
+    initializationList: string[]
+    connection_id: number | null
 }
