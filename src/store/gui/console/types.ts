@@ -1,12 +1,15 @@
 export interface GuiConsoleState {
+    cleared_since?: number
     hideWaitTemperatures: boolean
     hideTlCommands: boolean
     direction: 'table' | 'shell'
     entryStyle: 'default' | 'compact'
     height: number
+    autoscroll: boolean
     consolefilters: {
         [key: string]: GuiConsoleStateFilter
     }
+    rawOutput: boolean
 }
 
 export interface GuiConsoleStateFilter {

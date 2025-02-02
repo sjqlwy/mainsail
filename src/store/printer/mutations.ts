@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import { getDefaultState } from './index'
-import {MutationTree} from 'vuex'
-import {PrinterState} from '@/store/printer/types'
+import { MutationTree } from 'vuex'
+import { PrinterState } from '@/store/printer/types'
 
 export const mutations: MutationTree<PrinterState> = {
     reset(state) {
@@ -19,43 +19,26 @@ export const mutations: MutationTree<PrinterState> = {
     },
 
     setData(state, payload) {
-        // eslint-disable-next-line
-		const setDataDeep = (currentState: any, payload: any) => {
-            if (payload !== null && typeof payload === 'object') {
-                Object.keys(payload).forEach((key: string) => {
-                    const value = payload[key]
+        Object.keys(payload).forEach((key) => {
+            const value = payload[key]
 
-                    if (
-                        typeof value === 'object' &&
-						!Array.isArray(value) &&
-						key in currentState &&
-						value !== null &&
-						currentState[key] !== null
-                    ) {
-                        setDataDeep(currentState[key], value)
-                    } else if (key === 'temperature') {
-                        const newValue = Math.round(value * 10) / 10
-                        if (currentState[key] !== newValue) Vue.set(currentState, key, newValue)
-                    } else Vue.set(currentState, key, value)
+            if (typeof value !== 'object' || value === null || !(key in state)) {
+                Vue.set(state, key, value)
+                return
+            }
+
+            if (typeof value === 'object') {
+                Object.keys(value).forEach((subkey) => {
+                    Vue.set(state[key], subkey, value[subkey])
                 })
             }
-        }
-
-        setDataDeep(state, payload)
+        })
     },
 
-    setHelplist(state, payload) {
-        const helplist = []
-
-        for (const [command, description] of Object.entries(payload)) {
-            helplist.push({
-                'commandLow': command.toLowerCase(),
-                'command': command,
-                'description': description,
-            })
+    setBedMeshProfiles(state, payload) {
+        if ('bed_mesh' in state) {
+            Vue.set(state.bed_mesh, 'profiles', payload)
         }
-
-        Vue.set(state, 'helplist', helplist)
     },
 
     clearCurrentFile(state) {
@@ -69,8 +52,13 @@ export const mutations: MutationTree<PrinterState> = {
     },
 
     removeBedMeshProfile(state, payload) {
-        if ('bed_mesh '+payload.name in state.configfile.config) {
-            Object.assign(state.configfile.config['bed_mesh '+payload.name], { deleted: true })
+        if ('bed_mesh ' + payload.name in state.configfile.config) {
+            Object.assign(state.configfile.config['bed_mesh ' + payload.name], { deleted: true })
         }
-    }
+    },
+
+    clearScrewsTiltAdjust(state) {
+        Vue.set(state.screws_tilt_adjust, 'error', false)
+        Vue.set(state.screws_tilt_adjust, 'results', {})
+    },
 }

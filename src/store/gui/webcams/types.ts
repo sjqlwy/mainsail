@@ -1,17 +1,36 @@
 export interface GuiWebcamState {
-    webcams: {
-        [key: string]: GuiWebcamStateWebcam
-    },
+    webcams: GuiWebcamStateWebcam[]
 }
 
 export interface GuiWebcamStateWebcam {
-    id?: string
     name: string
+    location?: string
+    service:
+        | 'hlsstream'
+        | 'ipstream'
+        | 'jmuxer-stream'
+        | 'mjpegstreamer'
+        | 'mjpegstreamer-adaptive'
+        | 'uv4l-mjpeg'
+        | 'webrtc-camerastreamer'
+        | 'webrtc-janus'
+        | 'webrtc-mediamtx'
+    enabled: boolean
     icon: string
-    service: 'mjpegstreamer' | 'mjpegstreamer-adaptive' | 'uv4l-mjpeg' | 'ipstream'
-    targetFps: number
-    urlStream: string
-    urlSnapshot: string
-    flipX: boolean
-    flipY: boolean
+    target_fps: number
+    target_fps_idle?: number
+    stream_url: string
+    snapshot_url: string
+    flip_horizontal: boolean
+    flip_vertical: boolean
+    rotation: number
+    aspect_ratio?: string
+    extra_data?: {
+        enableAudio?: boolean
+        hideFps?: boolean
+        nozzleCrosshair?: boolean
+        nozzleCrosshairColor?: string
+        nozzleCrosshairSize?: number
+    }
+    source?: 'config' | 'database'
 }

@@ -1,21 +1,33 @@
-import {GuiMacrosState} from '@/store/gui/macros/types'
-import {GuiConsoleState} from '@/store/gui/console/types'
-import {GuiPresetsState} from '@/store/gui/presets/types'
-import {GuiRemoteprintersState} from '@/store/gui/remoteprinters/types'
+import { GuiMacrosState } from '@/store/gui/macros/types'
+import { GuiConsoleState } from '@/store/gui/console/types'
+import { GuiPresetsState } from '@/store/gui/presets/types'
+import { GuiRemoteprintersState } from '@/store/gui/remoteprinters/types'
+import { ServerHistoryStateJob } from '@/store/server/history/types'
+import { GuiNotificationState } from '@/store/gui/notifications/types'
+import { FileStateFile, FileStateGcodefile } from '@/store/files/types'
+import { GuiNavigationState } from '@/store/gui/navigation/types'
 
 export interface GuiState {
     general: {
         printername: string
         language: string
+        dateFormat: string | null
+        timeFormat: string | null
+        calcPrintProgress: 'file-relative' | 'file-absolute' | 'slicer' | 'filament'
         calcEstimateTime: string[] // file, filament are possible values
         calcEtaTime: string[] // file, filament, slicer are possible values
     }
     console?: GuiConsoleState
     control: {
         style: 'bars' | 'circle' | 'cross'
+        hideDuringPrint: boolean
+        actionButton: null | 'm84' | 'qgl' | 'ztilt'
+        enableXYHoming: boolean
         feedrateXY: number
         stepsXY: number[]
         feedrateZ: number
+        offsetsZ: number[]
+        offsetZSaveOption: null | 'Z_OFFSET_APPLY_ENDSTOP' | 'Z_OFFSET_APPLY_PROBE'
         stepsZ: number[]
         stepsAll: number[]
         stepsCircleXY: number[]
@@ -29,10 +41,13 @@ export interface GuiState {
             feedamounts: number[]
             feedrate: number
             feedrates: number[]
+            showEstimatedExtrusionInfo: boolean
         }
     }
     dashboard: {
-        nonExpandPanels: string[]
+        nonExpandPanels: {
+            [index: string]: string[]
+        }
         mobileLayout: GuiStateLayoutoption[]
         tabletLayout1: GuiStateLayoutoption[]
         tabletLayout2: GuiStateLayoutoption[]
@@ -45,18 +60,20 @@ export interface GuiState {
     editor: {
         escToClose: boolean
         confirmUnsavedChanges: boolean
+        klipperRestartMethod: 'FIRMWARE_RESTART' | 'RESTART'
+        tabSize: number
     }
     gcodeViewer: {
-        extruderColors : string[]
-        gridColor : string
-        backgroundColor : string
-        colorMode : number
-        showAxes : boolean
-        minFeed : number
-        maxFeed : number
-        minFeedColor : string
-        maxFeedColor : string
-        progressColor : string
+        extruderColors: string[]
+        gridColor: string
+        backgroundColor: string
+        colorMode: number
+        showAxes: boolean
+        minFeed: number
+        maxFeed: number
+        minFeedColor: string
+        maxFeedColor: string
+        progressColor: string
         showCursor: boolean
         showTravelMoves: boolean
         showObjectSelection: boolean
@@ -67,26 +84,54 @@ export interface GuiState {
         voxelWidth: number
         voxelHeight: number
         specularLighting: boolean
+        klipperCache: {
+            kinematics: string | null
+            axis_minimum: number[] | null
+            axis_maximum: number[] | null
+        }
+        showGCodePanel: boolean
+        cncMode: boolean
     }
     macros?: GuiMacrosState
+    navigation: GuiNavigationState
+    notifications?: GuiNotificationState
     presets?: GuiPresetsState
     remoteprinters?: GuiRemoteprintersState
     uiSettings: {
+        mode: 'dark' | 'light'
+        theme: string
         logo: string
         primary: string
         displayCancelPrint: boolean
-        displayZOffsetStandby: boolean
         lockSlidersOnTouchDevices: boolean
         lockSlidersDelay: number
         confirmOnEmergencyStop: boolean
+        confirmOnCoolDown: boolean
         confirmOnPowerDeviceChange: boolean
+        confirmOnCancelJob: boolean
         boolBigThumbnail: boolean
+        bigThumbnailBackground: string
         boolWideNavDrawer: boolean
         boolHideUploadAndPrintButton: boolean
-        boolWebcamNavi: boolean
         navigationStyle: 'iconsAndText' | 'iconsOnly'
+        defaultNavigationStateSetting: 'alwaysOpen' | 'alwaysClosed' | 'lastState'
+        powerDeviceName: string | null
+        progressAsFavicon: boolean
+        hideSaveConfigForBedMash: boolean
+        disableFanAnimation: boolean
+        boolManualProbeDialog: boolean
+        boolBedScrewsDialog: boolean
+        boolScrewsTiltAdjustDialog: boolean
+        tempchartHeight: number
+        hideUpdateWarnings: boolean
+        printstatusThumbnailZoom: boolean
+        dashboardFilesLimit: number
+        dashboardFilesFilter: GuiStateUiSettingsDashboardFilesFilter[]
+        dashboardHistoryLimit: number
+        hideOtherInstances: boolean
     }
     view: {
+        blockFileUpload: boolean
         configfiles: {
             countPerPage: number
             sortBy: string
@@ -95,6 +140,14 @@ export interface GuiState {
             hideBackupFiles: boolean
             currentPath: string
             rootPath: string
+            selectedFiles: FileStateFile[]
+        }
+        extruder: {
+            showTools: boolean
+            showExtrusionFactor: boolean
+            showPressureAdvance: boolean
+            showFirmwareRetraction: boolean
+            showExtruderControl: boolean
         }
         gcodefiles: {
             countPerPage: number
@@ -102,22 +155,28 @@ export interface GuiState {
             sortDesc: boolean
             showHiddenFiles: boolean
             showPrintedFiles: boolean
-            hideMetadataColums: string[]
+            hideMetadataColumns: string[]
+            orderMetadataColumns: string[]
             currentPath: string
+            selectedFiles: FileStateGcodefile[]
         }
         heightmap: {
             probed: boolean
             mesh: boolean
             flat: boolean
             wireframe: boolean
-            scale: number
-            scaleVisualMap: boolean
+            scaleGradient: boolean
+            scaleZMax: number
         }
         history: {
             countPerPage: number
+            toggleChartCol2: 'chart' | 'table'
             toggleChartCol3: string
             hidePrintStatus: string[]
             hideColums: string[]
+            selectedJobs: ServerHistoryStateJob[]
+            showMaintenanceEntries: boolean
+            showPrintJobs: boolean
         }
         jobqueue: {
             countPerPage: number
@@ -126,6 +185,8 @@ export interface GuiState {
         tempchart: {
             boolTempchart: boolean
             hiddenDataset: string[]
+            hideMcuHostSensors: boolean
+            hideMonitors: boolean
             autoscale: boolean
             datasetSettings: any
         }
@@ -135,6 +196,14 @@ export interface GuiState {
             sortDesc: boolean
             showHiddenFiles: boolean
             currentPath: string
+            selectedFiles: FileStateFile[]
+        }
+        toolhead: {
+            showPosition: boolean
+            showCoordinates: boolean
+            showControl: boolean
+            showZOffset: boolean
+            showSpeedFactor: boolean
         }
         webcam: {
             currentCam: {
@@ -149,3 +218,5 @@ export interface GuiStateLayoutoption {
     name: string
     visible: boolean
 }
+
+export type GuiStateUiSettingsDashboardFilesFilter = 'new' | 'failed' | 'completed'
